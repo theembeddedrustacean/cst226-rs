@@ -64,7 +64,6 @@
 //! - If the reset pin is controlled via an I2C GPIO expander sharing the same bus with the touch driver, you should use a shared bus implementation like `embedded_hal_bus` to manage I2C access.
 
 #![no_std]
-use core::prelude::v1;
 
 use embedded_hal::delay::DelayNs;
 use embedded_hal::i2c::I2c;
