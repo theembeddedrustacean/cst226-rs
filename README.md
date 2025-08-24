@@ -52,4 +52,4 @@ cargo run --release --example touch --all-features
 ```
 
 > **Notes:**
-> - If the reset pin is controlled via an I2C GPIO expander sharing the same bus with the touch driver, you should use the `embedded_hal_bus` to manage multiple instances of I2C. Refer to the examples folder to see how that looks like.
+> If the reset pin is controlled via an I2C GPIO expander sharing the same bus with the touch driver, you should use the `embedded_hal_bus` to manage multiple instances of I2C. Refer to the examples folder to see how that looks like.

@@ -5,7 +5,7 @@
 
 // Replaced ft3x68_rs with the conceptual cst226_rs crate.
 // Note: PowerMode and DriverError are not used in this specific example but are kept for completeness.
-use cst226_rs::{Cst226Driver, ResetInterface, CST226_DEVICE_ADDRESS};
+use cst226_rs::{Cst226Driver, Gesture, ResetInterface, CST226_DEVICE_ADDRESS};
 
 use esp_alloc as _;
 use esp_backtrace as _;
@@ -55,7 +55,7 @@ fn main() -> ! {
 
     let mut delay = Delay::new();
 
-    // I2C Configuration for the Waveshare ESP32-S3 1.8inch AMOLED display.
+    // I2C Configuration for the LilyGo T4-S3 display.
     // Both the touch controller and the I/O expander for reset are on this bus.
     let touch_i2c = I2c::new(
         peripherals.I2C0,
@@ -98,6 +98,21 @@ fn main() -> ! {
             }
             Err(e) => {
                 println!("Error reading touches: {:?}", e);
+            }
+        }
+
+        match touch.get_gesture() {
+            Ok(gesture) => {
+                match gesture {
+                    Gesture::SwipeUp => println!("Swipe Up detected"),
+                    Gesture::SwipeDown => println!("Swipe Down detected"),
+                    Gesture::SwipeLeft => println!("Swipe Left detected"),
+                    Gesture::SwipeRight => println!("Swipe Right detected"),
+                    Gesture::None => {} // No output for no gesture
+                }
+            }
+            Err(e) => {
+                println!("Error reading gestures: {:?}", e);
             }
         }
 

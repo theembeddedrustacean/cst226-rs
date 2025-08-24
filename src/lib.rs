@@ -64,6 +64,8 @@
 //! - If the reset pin is controlled via an I2C GPIO expander sharing the same bus with the touch driver, you should use a shared bus implementation like `embedded_hal_bus` to manage I2C access.
 
 #![no_std]
+use core::prelude::v1;
+
 use embedded_hal::delay::DelayNs;
 use embedded_hal::i2c::I2c;
 use heapless::Vec;
@@ -73,6 +75,9 @@ pub const CST226_DEVICE_ADDRESS: u8 = 0x5A;
 const CST226_REG_STATUS: u8 = 0x00;
 const CST226_BUFFER_SIZE: usize = 28;
 const MAX_TOUCH_POINTS: usize = 5;
+
+// Swipe detection threshold
+const SWIPE_MIN_DISTANCE: i32 = 50; // pixels
 
 /// Power modes for the touch device.
 #[derive(Clone, Copy, Debug)]
@@ -88,6 +93,24 @@ pub enum PowerMode {
 pub struct TouchPoint {
     pub x: u16,
     pub y: u16,
+}
+
+/// Single-finger swipe gestures.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Gesture {
+    None,
+    SwipeUp,
+    SwipeDown,
+    SwipeLeft,
+    SwipeRight,
+}
+
+/// Internal state for gesture detection.
+#[derive(Default)]
+struct GestureState {
+    is_touching: bool,
+    start_point: TouchPoint,
+    last_point: TouchPoint,
 }
 
 /// Trait for controlling the CST226 hardware reset pin.
@@ -116,6 +139,7 @@ pub struct Cst226Driver<I2C, D, RST> {
     device_address: u8,
     delay: D,
     reset: RST,
+    gesture_state: GestureState,
 }
 
 impl<I2C, D, RST> Cst226Driver<I2C, D, RST>
@@ -131,6 +155,7 @@ where
             device_address,
             delay,
             reset,
+            gesture_state: GestureState::default(),
         }
     }
 
@@ -139,6 +164,7 @@ where
     pub fn initialize(&mut self) -> Result<(), DriverError<RST::Error, I2C::Error>> {
         self.reset.reset().map_err(DriverError::ResetError)?;
         self.delay.delay_ms(10);
+        self.gesture_state = GestureState::default();
         Ok(())
     }
 
@@ -201,5 +227,57 @@ where
         }
 
         Ok(touches)
+    }
+
+    /// Detects single-finger swipe gestures based on touch history.
+    ///
+    /// Call this method periodically with the current time in milliseconds.
+    /// Returns `Gesture::None` if no gesture is detected or if multiple fingers are used.
+    pub fn get_gesture(&mut self) -> Result<Gesture, I2C::Error> {
+        let touches = self.get_touches()?;
+
+        let state = &mut self.gesture_state;
+
+        if touches.len() > 1 {
+            // Only support single finger
+            state.is_touching = false;
+            return Ok(Gesture::None);
+        }
+
+        if touches.is_empty() {
+            // Touch up
+            if state.is_touching {
+                state.is_touching = false;
+                let dx = state.last_point.x as i32 - state.start_point.x as i32;
+                let dy = state.last_point.y as i32 - state.start_point.y as i32;
+
+                // Swipe detection
+                if dx.abs() > dy.abs() && dx.abs() > SWIPE_MIN_DISTANCE {
+                    return Ok(if dx > 0 {
+                        Gesture::SwipeRight
+                    } else {
+                        Gesture::SwipeLeft
+                    });
+                } else if dy.abs() > dx.abs() && dy.abs() > SWIPE_MIN_DISTANCE {
+                    return Ok(if dy > 0 {
+                        Gesture::SwipeDown
+                    } else {
+                        Gesture::SwipeUp
+                    });
+                }
+            }
+            return Ok(Gesture::None);
+        } else {
+            // Touch down or move
+            let point = touches[0];
+            if !state.is_touching {
+                state.is_touching = true;
+                state.start_point = point;
+                state.last_point = point;
+            } else {
+                state.last_point = point;
+            }
+            return Ok(Gesture::None);
+        }
     }
 }
