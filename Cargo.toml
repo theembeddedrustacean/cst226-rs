@@ -18,26 +18,26 @@ path = "./src/lib.rs"
 
 [dependencies]
 # Optional dependencies for LilyGo T4-S3 display
-critical-section = { version = "1.2.0", optional = true }
-esp-alloc = { version = "0.8.0", optional = true }
-esp-backtrace = { version = "0.17.0", optional = true, features = [
+critical-section = { version = ">=1.2.0", optional = true }
+esp-alloc = { version = ">=0.8.0", optional = true }
+esp-backtrace = { version = ">=0.17.0", optional = true, features = [
   "esp32s3",
   "exception-handler",
   "panic-handler",
   "println",
 ] }
-esp-hal = { version = "=1.0.0-rc.0", optional = true, features = [
+esp-hal = { version = ">=1.0", optional = true, features = [
   "esp32s3",
   "unstable",
 ] }
-esp-println = { version = "0.15.0", optional = true, features = ["esp32s3"] }
-esp-bootloader-esp-idf = { version = "0.2.0", optional = true, features = [
+esp-println = { version = ">=0.15.0", optional = true, features = ["esp32s3"] }
+esp-bootloader-esp-idf = { version = ">=0.2.0", optional = true, features = [
   "esp32s3",
 ] }
-static_cell = { version = "2.1.1", optional = true }
-embedded-hal = "1.0.0"
-embedded-hal-bus = { version = "0.3.0", optional = true }
-heapless = "0.9"
+static_cell = { version = ">=2.1.1", optional = true }
+embedded-hal = ">=1.0.0"
+embedded-hal-bus = { version = ">=0.3.0", optional = true }
+heapless = ">=0.9"
 
 
 [profile.dev]
