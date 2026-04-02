@@ -1,0 +1,20 @@
+name: Compile Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Cargo Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile crate
+        run: cargo +stable check --lib --target x86_64-unknown-linux-gnu
